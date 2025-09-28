@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="uk">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Вчителі — архітектори Всесвіту</title>
+    <style>
+        :root {
+            --accent: #ffdf6b;
+            --panel-bg: rgba(10,10,20,0.95);
+            --glass: rgba(255,255,255,0.06);
+            --text: #f3f4f6;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+            background: #000;
+            color: var(--text);
+            font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+        }
+
+        .universe {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: url("universe.gif") no-repeat center center;
+            background-size: cover;
+        }
+
+        #map {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .attractor {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%,-50%);
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: conic-gradient(from 120deg, rgba(255,255,255,0.03), rgba(255,210,120,0.06), rgba(255,255,255,0.02));
+            box-shadow: 0 0 60px 20px rgba(255,220,110,0.06),0 0 18px rgba(255,140,0,0.06) inset;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 20;
+            border: 1px solid rgba(255,220,110,0.08);
+        }
+
+            .attractor .core {
+                width: 120px;
+                height: 120px;
+                border-radius: 50%;
+                background: radial-gradient(circle at 30% 30%, #fff9d6 0%, #ffd87f 12%, #ffb86b 32%, transparent 70%);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+                padding: 8px;
+                filter: drop-shadow(0 10px 30px rgba(255,150,0,0.06));
+            }
+
+            .attractor h2 {
+                margin: 0;
+                font-size: 14px;
+                color: #3b2b17;
+                text-align: center;
+            }
+
+        .object {
+            position: absolute;
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 8px 22px rgba(0,0,0,0.6);
+            border: 2px solid rgba(255,255,255,0.04);
+            overflow: hidden;
+            z-index: 18;
+        }
+
+            .object img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+            }
+
+            .object .label {
+                position: absolute;
+                bottom: -18px;
+                left: 50%;
+                transform: translateX(-50%);
+                font-size: 12px;
+                padding: 2px 8px;
+                background: var(--glass);
+                border-radius: 8px;
+                color: var(--text);
+                backdrop-filter: blur(4px);
+                white-space: nowrap;
+                box-shadow: 0 6px 14px rgba(0,0,0,0.5);
+                font-weight: 600;
+            }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(3,6,14,0.6), rgba(3,6,14,0.85));
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        .modal {
+            width: 92%;
+            max-width: 760px;
+            background: var(--panel-bg);
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: 0 30px 80px rgba(0,0,0,0.7);
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+            .modal .photo {
+                width: 220px;
+                height: 220px;
+                border-radius: 10px;
+                overflow: hidden;
+                flex: 0 0 220px;
+                background: #111;
+            }
+
+                .modal .photo img {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    display: block;
+                }
+
+            .modal .meta {
+                color: var(--text);
+                flex: 1;
+            }
+
+            .modal h3 {
+                margin: 6px 0 6px 0;
+            }
+
+            .modal p {
+                margin: 8px 0 0 0;
+                line-height: 1.45;
+                color: #e7e9ee;
+            }
+
+        .close-btn {
+            margin-left: auto;
+            background: transparent;
+            border: 0;
+            color: #fff;
+            font-size: 22px;
+            cursor: pointer;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="universe">
+        <button class="attractor" id="attractorBtn" title="Ворота у кращий світ">
+            <div class="core"><h2>Великий<br>Атрактор</h2></div>
+        </button>
+        <div id="map"></div>
+        <div class="modal-backdrop" id="modalBackdrop">
+            <div class="modal">
+                <div class="photo"><img id="modalPhoto" src=""></div>
+                <div class="meta">
+                    <div style="display:flex; align-items:center; gap:8px">
+                        <h3 id="modalTitle"></h3>
+                        <button class="close-btn" id="modalClose">&times;</button>
+                    </div>
+                    <strong id="modalSubject" style="opacity:0.9"></strong>
+                    <p id="modalText"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const teachers = [
+            { name: "Математика", title: "Зоря формул", text: "Дякуємо за зоряне навчання!", img: "math.jpg" },
+            { name: "Історія", title: "Чорна діра, що затягує у минуле", text: "Ваша історія оживає!", img: "history.jpg" },
+            { name: "Українська мова", title: "Комета слів, що надихає писати", text: "Ви надихаєте слова!", img: "ukr.jpg" },
+            { name: "Фізика", title: "Сонце, яке заряджає енергією", text: "Ви даруєте енергію знань!", img: "physics.jpg" },
+            { name: "Інформатика", title: "Космічний сервер даних", text: "Дякуємо за цифрову магію!", img: "it.jpg" },
+            { name: "Біологія", title: "Планета життя", text: "Ви ростите життя у знаннях!", img: "bio.jpg" },
+            { name: "Хімія", title: "Туманність реакцій", text: "Ви створюєте магію реакцій!", img: "chem.jpg" },
+            { name: "Географія", title: "Мандрівна планета", text: "Ви відкриваєте нові світи!", img: "geo.png" },
+            { name: "Література", title: "Зоря натхнення", text: "Ви запалюєте натхнення!", img: "lit.jpg" },
+            { name: "Англійська мова", title: "Сузір’я мов", text: "Ви відкриваєте космос мов!", img: "eng.jpg" },
+            { name: "Фізкультура", title: "Пульсар сили", text: "Ви заряджаєте силою!", img: "pe.jpg" },
+            { name: "Астрономія", title: "Навігатор сузір’їв", text: "Ви показуєте шлях у зірках!", img: "astro.jpg" },
+            { name: "Зарубіжна література", title: "Метеор думок", text: "Ви надихаєте думки!", img: "worldlit.jpg" },
+            { name: "Захист України", title: "Щит Всесвіту", text: "Ви захищаєте наш Всесвіт!", img: "defense.jpg" }
+        ];
+
+        const mapDiv = document.getElementById('map');
+        const objSize = 96;
+
+        function placeObjectsAroundAttractor() {
+            const mapRect = mapDiv.getBoundingClientRect();
+            const cx = mapRect.width / 2;
+            const cy = mapRect.height / 2;
+            const minDistance = 180;
+            const maxDistance = Math.min(cx, cy) - 30;
+            const count = teachers.length;
+
+            teachers.forEach((t, i) => {
+                const obj = document.createElement('div');
+                obj.className = `object obj-${i + 1}`;
+                obj.dataset.index = i;
+
+                const img = document.createElement('img');
+                img.src = t.img;
+                const label = document.createElement('div');
+                label.className = "label";
+                label.textContent = t.title;
+                obj.appendChild(img);
+                obj.appendChild(label);
+
+                const angle = (i / count) * (2 * Math.PI) + (Math.random() - 0.5) * 0.2;
+                const distance = minDistance + Math.random() * (maxDistance - minDistance);
+                const x = cx + distance * Math.cos(angle) - objSize / 2;
+                const y = cy + distance * Math.sin(angle) - objSize / 2;
+
+                obj.style.left = x + 'px';
+                obj.style.top = y + 'px';
+                mapDiv.appendChild(obj);
+
+                obj.addEventListener('click', () => {
+                    modalTitle.textContent = t.name;
+                    modalSubject.textContent = t.title;
+                    modalText.textContent = t.text;
+                    modalPhoto.src = t.img;
+                    modalBackdrop.style.display = 'flex';
+                });
+            });
+        }
+
+        window.addEventListener('load', placeObjectsAroundAttractor);
+        window.addEventListener('resize', () => {
+            mapDiv.innerHTML = '';
+            placeObjectsAroundAttractor();
+        });
+
+        const modalBackdrop = document.getElementById('modalBackdrop');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalSubject = document.getElementById('modalSubject');
+        const modalText = document.getElementById('modalText');
+        const modalPhoto = document.getElementById('modalPhoto');
+
+        document.getElementById('modalClose').addEventListener('click', () => { modalBackdrop.style.display = 'none'; });
+        modalBackdrop.addEventListener('click', (e) => { if (e.target === modalBackdrop) modalBackdrop.style.display = 'none'; });
+
+        document.getElementById('attractorBtn').addEventListener('click', () => {
+            modalTitle.textContent = "Великий Атрактор — Ворота у кращий світ";
+            modalPhoto.src = "ukraine.jpg";
+            modalSubject.textContent = "";
+            modalText.textContent = "Ласкаво просимо у кращий світ знань і натхнення!";
+            modalBackdrop.style.display = 'flex';
+        });
+    </script>
+</body>
+</html>
